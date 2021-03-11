@@ -4,7 +4,9 @@ import datetime
 from unityagents import UnityEnvironment
 from collections import deque
 from common import *
-from support import Experience
+import config
+from support import Experience, ReplayBuffer, OUNoise
+from agents import MultiDDPGAgent
 
 
 def environment_settings(file_name="Tennis.app"):
@@ -48,7 +50,8 @@ def step_tuple(env_info):
     return env_info.vector_observations, env_info.rewards, env_info.local_done
 
 
-def ddpg(agent, env_settings: dict, num_episodes=2000, target=0.5, max_time_steps=500, saved_model="checkpoint.pth"):
+def ddpg(agent: MultiDDPGAgent, env_settings: dict, num_episodes=2000, target=0.5, max_time_steps=500,
+         saved_model="checkpoint.pth"):
     """ Train an agent using the DDPG algorithm
 
         :param env_settings: Settings of the environment
@@ -77,7 +80,7 @@ def ddpg(agent, env_settings: dict, num_episodes=2000, target=0.5, max_time_step
         score = np.zeros(num_agents)
 
         for _ in range(max_time_steps):
-            actions = agent.act(states, num_agents)
+            actions = agent.act(states)
             env_info = env.step(actions)[brain_name]
             next_states, rewards, dones = step_tuple(env_info)
             for idx in range(num_agents):
@@ -109,7 +112,44 @@ def ddpg(agent, env_settings: dict, num_episodes=2000, target=0.5, max_time_step
     return scores, stats
 
 
+def test(agent: MultiDDPGAgent, env_settings, filename):
+    print("Loading weights from {} to test the agent".format(filename))
+    agent.local_actor_network().load_state_dict(torch.load(filename))
+    env = env_settings["env"]
+    brain_name = env_settings["brain_name"]
+    num_agents = env_settings["num_agents"]
+
+    env_info = env.reset(train_mode=False)[brain_name]  # reset the environment
+    state = env_info.vector_observations  # get the current state
+    score = np.zeros(num_agents)  # initialize the score
+    while True:
+        action = agent.act(state, add_noise=False)  # select an action
+        env_info = env.step(action)[brain_name]  # send the action to the environment
+        next_state = env_info.vector_observations
+        # get the next state
+        reward = env_info.rewards  # get the reward
+        done = env_info.local_done  # see if episode has finished
+        score += reward  # update the score
+        state = next_state  # roll over the state to next time step
+        if np.any(done):  # exit loop if episode finished
+            break
+
+    print("Score for {} agents: {}".format(num_agents, np.mean(score)))
+
+    env.close()
+
+
 if __name__ == '__main__':
 
     env_settings = environment_settings()
-    ddpg(None, env_settings)
+    action_size = env_settings["action_size"]
+    state_size = env_settings["state_size"]
+    num_agents = env_settings["num_agents"]
+    memory = ReplayBuffer(action_size, config.BUFFER_SIZE, config.BATCH_SIZE, random_seed=0)
+    noise = OUNoise(action_size, 0)
+    multi_agent = MultiDDPGAgent(state_size, action_size, num_agents, noise, memory)
+    train = False
+    if train:
+        scores, stats = ddpg(multi_agent, env_settings)
+    else:
+        test(multi_agent, env_settings, filename='checkpoint.pth')

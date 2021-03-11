@@ -1,6 +1,7 @@
 """ Support classes """
 from collections import deque, namedtuple
 from common import *
+import copy
 
 
 class Experience:
@@ -67,3 +68,25 @@ class ReplayBuffer:
         """Return the current size of internal memory."""
         return len(self.memory)
 
+
+class OUNoise:
+    """ Ornstein-Uhlenbeck exploration noise process for temporally correlated noise """
+
+    def __init__(self, action_size, seed, mu=0., theta=.15, sigma=.2):
+        self.mu = mu * np.ones(action_size)
+        self.theta = theta
+        self.sigma = sigma
+        self.state = None
+        self.action_size = action_size
+        random.seed(seed)
+
+    def reset(self):
+        """Reset the internal state (= noise) to mean (mu)."""
+        self.state = copy.copy(self.mu)
+
+    def sample(self):
+        """Update internal state and return it as a noise sample."""
+        x = self.state
+        dx = self.theta * (self.mu - x) + self.sigma * np.random.standard_normal(self.action_size)
+        self.state = x + dx
+        return self.state
