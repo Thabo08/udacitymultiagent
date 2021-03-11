@@ -78,7 +78,7 @@ Once downloaded, place the zip archive in the directory of your choice and decom
 
 The script is command line based and can be used in the following ways:
 ```commandline
-python multi_multi_trainer.py -h
+python multi_trainer.py -h
 ```
 The line above gives a help print out of the high level parameters that can be passed to run the trainer
 ```
