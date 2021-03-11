@@ -135,7 +135,7 @@ def test(agent: MultiDDPGAgent, env_settings, filename):
         if np.any(done):  # exit loop if episode finished
             break
 
-    print("Score for {} agents: {}".format(num_agents, np.mean(score)))
+    print("Score for {} agents: {}".format(num_agents, np.round(np.mean(score), 2)))
 
     env.close()
 
