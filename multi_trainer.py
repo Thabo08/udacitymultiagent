@@ -1,6 +1,7 @@
 """ This script performs the training of the multi agent """
 
 import datetime
+import argparse
 from unityagents import UnityEnvironment
 from collections import deque
 from common import *
@@ -139,8 +140,18 @@ def test(agent: MultiDDPGAgent, env_settings, filename):
     env.close()
 
 
-if __name__ == '__main__':
+def plot(stats):
+    scores = stats["scores"]
+    episodes = stats["episodes"]
+    plt.ylabel("Score")
+    plt.xlabel("Episode #")
+    plt.plot(episodes, scores)
+    fig = plt.figure()
+    fig.patch.set_facecolor('white')
+    plt.show()
 
+
+def run_in_ide(train):
     env_settings = environment_settings()
     action_size = env_settings["action_size"]
     state_size = env_settings["state_size"]
@@ -148,8 +159,44 @@ if __name__ == '__main__':
     memory = ReplayBuffer(action_size, config.BUFFER_SIZE, config.BATCH_SIZE, random_seed=0)
     noise = OUNoise(action_size, 0)
     multi_agent = MultiDDPGAgent(state_size, action_size, num_agents, noise, memory)
-    train = False
     if train:
         scores, stats = ddpg(multi_agent, env_settings)
     else:
         test(multi_agent, env_settings, filename='checkpoint.pth')
+
+
+def run_in_cmd():
+    """Run in command line"""
+    parser = argparse.ArgumentParser(description="""This script trains a agents to control racquets and play tennis with 
+    the goal being to keep the tennis ball in play. It uses the Deep Deterministic Policy Gradient (DDPG) algorithm.""")
+    parser.add_argument("agentFile", help="The file to load the agent(s)")
+    parser.add_argument("--model", default="checkpoint.pth", help="Path where the trained model should be saved")
+    parser.add_argument("--mode", default="train", choices=["train", "test"],
+                        help="Mode describing whether to train or test")
+
+    args = parser.parse_args()
+
+    train = args.mode == "train"
+    filename = args.model
+    env_settings = environment_settings()
+    action_size = env_settings["action_size"]
+    state_size = env_settings["state_size"]
+    num_agents = env_settings["num_agents"]
+    memory = ReplayBuffer(action_size, config.BUFFER_SIZE, config.BATCH_SIZE, random_seed=0)
+    noise = OUNoise(action_size, 0)
+    multi_agent = MultiDDPGAgent(state_size, action_size, num_agents, noise, memory)
+
+    if train:
+        _, stats = ddpg(multi_agent, env_settings, saved_model=filename)
+        plot(stats)
+    else:
+        test(multi_agent, env_settings, filename=filename)
+
+
+if __name__ == '__main__':
+
+    # uncomment the line below to run in IDE
+    # run_in_ide(train=False)
+
+    run_in_cmd()
+
