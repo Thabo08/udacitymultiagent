@@ -15,7 +15,7 @@ The algorithm used is the Deep Deterministic Policy Gradient (DDPG), which uses 
 
 ### 1. The Environment
 The Unity Tennis environment was used. The environment has two agents, as mentioned. With the goal of keeping the ball in
-play, the agents each receive a score of +0.1 when they hit the ball over the net and, a score of when the ball hits the
+play, the agents each receive a score of +0.1 when they hit the ball over the net and, a score of -0.01 when the ball hits the
 ground or is hit out of bounds. 
 
 For the agents to be considered to have been well-trained, they must receive an average score of at least +0.5 over 100
