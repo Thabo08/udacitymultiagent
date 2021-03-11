@@ -103,7 +103,7 @@ second
 ![point5][point5]
 
 ![point75][point75]
-https://openai.com/blog/better-exploration-with-parameter-noise/
+
 ### Ideas of Future Work
 Although the DDPG implementation worked well, it's worth a while to explore the following ideas for improving the learning:
 * Use Parameter Noise for exploration - [This has been shown](https://openai.com/blog/better-exploration-with-parameter-noise/)
